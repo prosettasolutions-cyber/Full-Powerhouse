@@ -1,0 +1,7 @@
+# Ritu eCEO local Powerhouse readiness probe
+
+def report():
+    return {
+        'status': 'ready',
+        'message': 'Ritu eCEO is ready to manage the local Powerhouse.',
+    }

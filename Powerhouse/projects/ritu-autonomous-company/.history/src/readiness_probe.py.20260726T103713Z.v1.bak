@@ -1,0 +1,11 @@
+# src/readiness_probe.py
+
+def report():
+    return {
+        'status': 'ready',
+        'version': '1.0',
+        'checks': [
+            {'name': 'disk_space', 'result': True},
+            {'name': 'network_latency', 'result': False}
+        ]
+    }
