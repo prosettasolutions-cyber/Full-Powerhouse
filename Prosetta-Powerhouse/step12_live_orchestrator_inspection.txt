@@ -1,0 +1,601 @@
+FILE: powerhouse\live_orchestrator.py
+TOTAL LINES: 618
+SELECTED RANGE: 2-594
+
+0002: 
+0003: from typing import Any
+0004: 
+0005: from .orchestrator import (
+0006:     PLANNER_SYSTEM,
+0007:     ROOM_POLICIES,
+0008:     RituOrchestrator as BaseRituOrchestrator,
+0009: )
+0010: from .prompt_builder import build_ritu_messages
+0011: from .response_guard import (
+0012:     enforce_truth_contract,
+0013:     guard_user_request,
+0014:     has_file_evidence,
+0015:     normalize_model_plan,
+0016: )
+0017: 
+0018: 
+0019: _NO_ACTION_DIRECTIVES = (
+0020:     "return no actions",
+0021:     "return no action",
+0022:     "take no action",
+0023:     "perform no action",
+0024:     "execute no action",
+0025:     "do not create",
+0026:     "do not update",
+0027:     "do not complete",
+0028:     "do not assign",
+0029:     "do not run",
+0030:     "do not install",
+0031:     "do not delete",
+0032:     "do not remove",
+0033:     "do not write",
+0034:     "do not modify",
+0035:     "do not patch",
+0036:     "do not change",
+0037:     "do not train",
+0038:     "do not execute",
+0039:     "do not perform",
+0040:     "must not create",
+0041:     "must not update",
+0042:     "must not execute",
+0043:     "must not perform",
+0044: )
+0045: 
+0046: 
+0047: def action_execution_allowed(
+0048:     user_message: str,
+0049:     selected_context: dict[str, Any] | None,
+0050: ) -> bool:
+0051:     """
+0052:     Apply a deterministic execution lock before _execute_action().
+0053: 
+0054:     Model output, historical context, runtime state, and previous approvals
+0055:     cannot override an explicit execution prohibition in the current turn.
+0056:     """
+0057: 
+0058:     context = (
+0059:         selected_context
+0060:         if isinstance(selected_context, dict)
+0061:         else {}
+0062:     )
+0063: 
+0064:     if context.get("execution_allowed") is False:
+0065:         return False
+0066: 
+0067:     message = str(
+0068:         user_message or ""
+0069:     ).casefold()
+0070: 
+0071:     return not any(
+0072:         directive in message
+0073:         for directive in _NO_ACTION_DIRECTIVES
+0074:     )
+0075: 
+0076: 
+0077: class RituOrchestrator(BaseRituOrchestrator):
+0078:     """
+0079:     Authoritative live Ritu orchestrator.
+0080: 
+0081:     Processing order:
+0082: 
+0083:     1. Validate the user request.
+0084:     2. Block explicit false-completion requests before model inference.
+0085:     3. Assemble approved intelligence and verified runtime context.
+0086:     4. Call the appropriate local Ollama model.
+0087:     5. Normalize the model response contract.
+0088:     6. Enforce approval gates.
+0089:     7. Execute permitted actions.
+0090:     8. Apply the deterministic post-model truth guard.
+0091:     9. Persist the verified response and audit metadata.
+0092:     """
+0093: 
+0094:     def chat(
+0095:         self,
+0096:         message: str,
+0097:         session_id: str = "default",
+0098:         selected_context: dict[str, Any] | None = None,
+0099:         room: str = "command",
+0100:     ) -> dict[str, Any]:
+0101:         message = message.strip()
+0102: 
+0103:         if not message:
+0104:             raise ValueError("Message is required.")
+0105: 
+0106:         room = room if room in ROOM_POLICIES else "command"
+0107:         selected_context = selected_context or {}
+0108: 
+0109:         self.store.add_conversation(
+0110:             session_id,
+0111:             "user",
+0112:             message,
+0113:         )
+0114: 
+0115:         request_allowed, guarded_response, request_violations = (
+0116:             guard_user_request(message)
+0117:         )
+0118: 
+0119:         if not request_allowed:
+0120:             return self._blocked_request_result(
+0121:                 response=guarded_response,
+0122:                 violations=request_violations,
+0123:                 session_id=session_id,
+0124:                 room=room,
+0125:             )
+0126: 
+0127:         status = self.store.status()
+0128: 
+0129:         compact: dict[str, Any] = {
+0130:             "active_room": room,
+0131:             "projects": [
+0132:                 {
+0133:                     "id": project["id"],
+0134:                     "name": project["name"],
+0135:                     "phase": project["phase"],
+0136:                     "status": project["status"],
+0137:                 }
+0138:                 for project in status["projects"]
+0139:             ],
+0140:             "agents": [
+0141:                 {
+0142:                     "id": agent["id"],
+0143:                     "name": agent["name"],
+0144:                     "role": agent["role"],
+0145:                     "status": agent["status"],
+0146:                     "project_id": agent["project_id"],
+0147:                 }
+0148:                 for agent in status["agents"]
+0149:             ],
+0150:             "tasks": [
+0151:                 {
+0152:                     "id": task["id"],
+0153:                     "title": task["title"],
+0154:                     "status": task["status"],
+0155:                     "project_id": task["project_id"],
+0156:                     "agent_id": task["agent_id"],
+0157:                 }
+0158:                 for task in status["tasks"][:30]
+0159:             ],
+0160:             "selected_context": selected_context,
+0161:         }
+0162: 
+0163:         project_reference = str(
+0164:             selected_context.get("project_id") or ""
+0165:         )
+0166: 
+0167:         active_project = (
+0168:             self.store.find_project(project_reference)
+0169:             if project_reference
+0170:             else None
+0171:         )
+0172: 
+0173:         file_terms = (
+0174:             "file",
+0175:             "code",
+0176:             "folder",
+0177:             "workspace",
+0178:             "artifact",
+0179:             "document",
+0180:             "readme",
+0181:             "python",
+0182:             "website",
+0183:             "portal",
+0184:         )
+0185: 
+0186:         if active_project and (
+0187:             room == "project"
+0188:             or any(
+0189:                 term in message.casefold()
+0190:                 for term in file_terms
+0191:             )
+0192:         ):
+0193:             compact["project_workspace"] = (
+0194:                 self.workspace.file_context(active_project)
+0195:             )
+0196: 
+0197:         portal_terms = (
+0198:             "website",
+0199:             "portal",
+0200:             "frontend",
+0201:             "ui",
+0202:             "server.py",
+0203:             "app.js",
+0204:             "styles.css",
+0205:             "index.html",
+0206:         )
+0207: 
+0208:         if room == "boardroom" or any(
+0209:             term in message.casefold()
+0210:             for term in portal_terms
+0211:         ):
+0212:             compact["portal_source"] = (
+0213:                 self.workspace.portal_file_context(message)
+0214:             )
+0215: 
+0216:         history = self.store.recent_conversation(
+0217:             session_id,
+0218:             10,
+0219:         )
+0220: 
+0221:         messages, active_intelligence = build_ritu_messages(
+0222:             planner_system=PLANNER_SYSTEM,
+0223:             room_policy=ROOM_POLICIES[room],
+0224:             company_state=compact,
+0225:             conversation_history=history,
+0226:         )
+0227: 
+0228:         model_client = (
+0229:             self.deep_ollama
+0230:             if room in {"training", "boardroom"}
+0231:             else self.fast_ollama
+0232:         )
+0233: 
+0234:         raw = model_client.chat(
+0235:             messages,
+0236:             json_mode=True,
+0237:             temperature=0.15,
+0238:         )
+0239: 
+0240:         parsed_plan = self._parse_json(raw)
+0241:         plan = normalize_model_plan(parsed_plan)
+0242: 
+0243:         response = plan["response"]
+0244:         actions = plan["actions"]
+0245: 
+0246:         approval_terms = (
+0247:             "approve",
+0248:             "approved",
+0249:             "proceed",
+0250:             "go ahead",
+0251:             "begin training",
+0252:             "start training",
+0253:             "you have my permission",
+0254:             "permission granted",
+0255:         )
+0256: 
+0257:         explicitly_approved = any(
+0258:             term in message.casefold()
+0259:             for term in approval_terms
+0260:         )
+0261: 
+0262:         portal_file_actions = [
+0263:             action
+0264:             for action in actions
+0265:             if action.get("type") in {
+0266:                 "write_file",
+0267:                 "patch_file",
+0268:             }
+0269:             and isinstance(action.get("args"), dict)
+0270:             and action["args"].get("scope") == "portal"
+0271:         ]
+0272: 
+0273:         if portal_file_actions and room != "boardroom":
+0274:             actions = []
+0275:             plan["needs_input"] = True
+0276: 
+0277:             response = self._append_response(
+0278:                 response,
+0279:                 (
+0280:                     "Portal source changes must be reviewed and explicitly "
+0281:                     "approved in the Boardroom."
+0282:                 ),
+0283:             )
+0284: 
+0285:         if (
+0286:             room == "training"
+0287:             and any(
+0288:                 action.get("type") == "train_ritu"
+0289:                 for action in actions
+0290:             )
+0291:             and not explicitly_approved
+0292:         ):
+0293:             actions = []
+0294:             plan["needs_input"] = True
+0295: 
+0296:             response = self._append_response(
+0297:                 response,
+0298:                 (
+0299:                     "No training change has been applied yet. "
+0300:                     "Approve or revise the proposal when you are ready."
+0301:                 ),
+0302:             )
+0303: 
+0304:         if (
+0305:             room == "boardroom"
+0306:             and actions
+0307:             and not explicitly_approved
+0308:         ):
+0309:             actions = []
+0310:             plan["needs_input"] = True
+0311: 
+0312:             response = self._append_response(
+0313:                 response,
+0314:                 (
+0315:                     "No consequential action has been executed. "
+0316:                     "The Boardroom is waiting for explicit approval."
+0317:                 ),
+0318:             )
+0319: 
+0320:         execution_allowed = action_execution_allowed(
+0321:             message,
+0322:             selected_context,
+0323:         )
+0324: 
+0325:         if not execution_allowed:
+0326:             actions = []
+0327:             plan["actions"] = []
+0328: 
+0329:         outcomes: list[dict[str, Any]] = []
+0330: 
+0331:         if (
+0332:             execution_allowed
+0333:             and not plan.get("needs_input")
+0334:         ):
+0335:             for action in actions[:8]:
+0336:                 try:
+0337:                     outcome = self._execute_action(action)
+0338: 
+0339:                     if not isinstance(outcome, dict):
+0340:                         outcome = {
+0341:                             "type": action.get("type", "unknown"),
+0342:                             "ok": False,
+0343:                             "verified": False,
+0344:                             "error": (
+0345:                                 "Action returned an invalid runtime result."
+0346:                             ),
+0347:                         }
+0348: 
+0349:                     outcomes.append(outcome)
+0350: 
+0351:                 except Exception as error:
+0352:                     outcomes.append(
+0353:                         {
+0354:                             "type": action.get("type", "unknown"),
+0355:                             "ok": False,
+0356:                             "verified": False,
+0357:                             "error": str(error),
+0358:                         }
+0359:                     )
+0360: 
+0361:         completed = [
+0362:             outcome
+0363:             for outcome in outcomes
+0364:             if outcome.get("ok") is True
+0365:             and outcome.get("verified", True) is True
+0366:         ]
+0367: 
+0368:         failed = [
+0369:             outcome
+0370:             for outcome in outcomes
+0371:             if outcome not in completed
+0372:         ]
+0373: 
+0374:         safe_response, truth_violations = enforce_truth_contract(
+0375:             response=response,
+0376:             user_message=message,
+0377:             successful_outcomes=completed,
+0378:             file_evidence_available=has_file_evidence(compact),
+0379:         )
+0380: 
+0381:         response = safe_response
+0382: 
+0383:         if completed:
+0384:             verified_summaries = [
+0385:                 str(
+0386:                     outcome.get("summary")
+0387:                     or outcome.get("type")
+0388:                     or "verified action completed"
+0389:                 )
+0390:                 for outcome in completed
+0391:             ]
+0392: 
+0393:             response = self._append_response(
+0394:                 response,
+0395:                 "VERIFIED EXECUTION: "
+0396:                 + "; ".join(verified_summaries),
+0397:             )
+0398: 
+0399:         if failed:
+0400:             failure_summaries = [
+0401:                 str(
+0402:                     outcome.get("error")
+0403:                     or outcome.get("summary")
+0404:                     or "action failed verification"
+0405:                 )
+0406:                 for outcome in failed
+0407:             ]
+0408: 
+0409:             response = self._append_response(
+0410:                 response,
+0411:                 "NEEDS ATTENTION: "
+0412:                 + "; ".join(failure_summaries),
+0413:             )
+0414: 
+0415:         self.store.add_conversation(
+0416:             session_id,
+0417:             "assistant",
+0418:             response,
+0419:         )
+0420: 
+0421:         self.store.add_event(
+0422:             "ritu_update",
+0423:             response[:500],
+0424:             {
+0425:                 "room": room,
+0426:                 "actions": outcomes,
+0427:                 "active_intelligence": [
+0428:                     intelligence["id"]
+0429:                     for intelligence in active_intelligence
+0430:                 ],
+0431:                 "request_guard": {
+0432:                     "allowed": True,
+0433:                     "violations": [],
+0434:                 },
+0435:                 "truth_violations": truth_violations,
+0436:                 "execution_allowed": execution_allowed,
+0437:                 "raw_response_key": self._detected_response_key(
+0438:                     parsed_plan
+0439:                 ),
+0440:             },
+0441:         )
+0442: 
+0443:         return {
+0444:             "response": response,
+0445:             "reply": response,
+0446:             "actions": outcomes,
+0447:             "needs_input": bool(plan.get("needs_input")),
+0448:             "room": room,
+0449:             "model": model_client.model,
+0450:             "active_intelligence": active_intelligence,
+0451:             "intelligence_count": len(active_intelligence),
+0452:             "request_guard": {
+0453:                 "allowed": True,
+0454:                 "blocked": False,
+0455:                 "violations": [],
+0456:             },
+0457:             "truth_guard": {
+0458:                 "passed": not truth_violations,
+0459:                 "violations": truth_violations,
+0460:             },
+0461:             "execution_guard": {
+0462:                 "allowed": execution_allowed,
+0463:                 "blocked": not execution_allowed,
+0464:             },
+0465:             "company": self.status(),
+0466:         }
+0467: 
+0468:     def _blocked_request_result(
+0469:         self,
+0470:         *,
+0471:         response: str,
+0472:         violations: list[str],
+0473:         session_id: str,
+0474:         room: str,
+0475:     ) -> dict[str, Any]:
+0476:         """
+0477:         Return a deterministic answer without calling Ollama.
+0478: 
+0479:         This path is used when the request itself explicitly asks Ritu to
+0480:         fabricate completion or make another prohibited claim.
+0481:         """
+0482: 
+0483:         active_intelligence = self._active_core_metadata()
+0484: 
+0485:         self.store.add_conversation(
+0486:             session_id,
+0487:             "assistant",
+0488:             response,
+0489:         )
+0490: 
+0491:         self.store.add_event(
+0492:             "ritu_request_blocked",
+0493:             response[:500],
+0494:             {
+0495:                 "room": room,
+0496:                 "request_guard": {
+0497:                     "allowed": False,
+0498:                     "violations": violations,
+0499:                 },
+0500:                 "active_intelligence": [
+0501:                     intelligence["id"]
+0502:                     for intelligence in active_intelligence
+0503:                 ],
+0504:                 "model_called": False,
+0505:                 "actions": [],
+0506:             },
+0507:         )
+0508: 
+0509:         return {
+0510:             "response": response,
+0511:             "reply": response,
+0512:             "actions": [],
+0513:             "needs_input": False,
+0514:             "room": room,
+0515:             "model": "deterministic-request-guard",
+0516:             "model_called": False,
+0517:             "active_intelligence": active_intelligence,
+0518:             "intelligence_count": len(active_intelligence),
+0519:             "request_guard": {
+0520:                 "allowed": False,
+0521:                 "blocked": True,
+0522:                 "violations": violations,
+0523:             },
+0524:             "truth_guard": {
+0525:                 "passed": True,
+0526:                 "violations": [],
+0527:                 "not_required": True,
+0528:             },
+0529:             "company": self.status(),
+0530:         }
+0531: 
+0532:     @staticmethod
+0533:     def _active_core_metadata() -> list[dict[str, Any]]:
+0534:         """
+0535:         Return public metadata for the core intelligence used by the
+0536:         deterministic request-guard path.
+0537:         """
+0538: 
+0539:         from .ritu_core import (
+0540:             get_identity_metadata,
+0541:             get_truth_evidence_metadata,
+0542:         )
+0543: 
+0544:         fields = (
+0545:             "id",
+0546:             "name",
+0547:             "version",
+0548:             "category",
+0549:             "scope",
+0550:             "priority",
+0551:             "status",
+0552:             "source",
+0553:             "canonical_document",
+0554:         )
+0555: 
+0556:         layers = [
+0557:             get_identity_metadata(),
+0558:             get_truth_evidence_metadata(),
+0559:         ]
+0560: 
+0561:         active = [
+0562:             layer
+0563:             for layer in layers
+0564:             if str(layer.get("status") or "").casefold()
+0565:             == "active"
+0566:         ]
+0567: 
+0568:         active.sort(
+0569:             key=lambda layer: int(
+0570:                 layer.get("priority") or 0
+0571:             ),
+0572:             reverse=True,
+0573:         )
+0574: 
+0575:         return [
+0576:             {
+0577:                 field: layer.get(field)
+0578:                 for field in fields
+0579:             }
+0580:             for layer in active
+0581:         ]
+0582: 
+0583:     @staticmethod
+0584:     def _append_response(
+0585:         response: str,
+0586:         addition: str,
+0587:     ) -> str:
+0588:         response = str(response or "").strip()
+0589:         addition = str(addition or "").strip()
+0590: 
+0591:         if not response:
+0592:             return addition
+0593: 
+0594:         if not addition:
+
+INSPECTION COMPLETED
+SOURCE FILES CHANGED: 0
+RUNTIME ACTIONS EXECUTED: 0

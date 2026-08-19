@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#0b2235">
+  <title>Ritu Command Center</title>
+  <meta name="description" content="Ritu Cognitive Operations Interface">
+  <link rel="stylesheet" href="styles.css?v=ritu-files-4">
+</head>
+<body>
+  <canvas id="particle-canvas" aria-hidden="true"></canvas>
+  <div class="app-shell">
+    <header class="topbar">
+      <button class="brand" data-view="command" aria-label="Open Command Center">
+        <span class="brand-mark"><i></i></span><span><b>RITU</b><small>Cognitive Operations Interface</small></span>
+      </button>
+      <div class="top-project"><span>ACTIVE FOCUS</span><strong id="top-project-name">Ritu Web Command Center</strong></div>
+      <div class="top-statuses">
+        <span id="ocr-status" class="desktop-only"><i class="dot"></i>OCR CONNECTING</span>
+        <span id="api-status"><i class="dot"></i>API CONNECTING</span><span id="local-ai-status" class="desktop-only"><i class="dot"></i>OLLAMA CONNECTING</span><span class="desktop-only"><i class="dot"></i>VOICE READY</span>
+      </div>
+      <time id="clock"><b>00:00</b><small>LOADING</small></time>
+      <button class="icon-button notification-button" data-action="notifications" aria-label="Notifications">◌<em id="notification-count">3</em></button>
+      <button class="profile" aria-label="User profile">PS</button>
+      <button class="icon-button" data-action="fullscreen" aria-label="Toggle fullscreen">⛶</button>
+    </header>
+
+    <aside class="nav-rail" aria-label="Primary navigation">
+      <nav id="primary-nav"></nav>
+      <button class="new-mission" data-action="new-mission"><span>＋</span><b>New Mission</b></button>
+    </aside>
+
+    <main id="workspace" tabindex="-1"></main>
+
+    <aside id="context-panel" class="context-panel">
+      <button class="context-toggle" data-action="toggle-context" aria-label="Collapse context panel">›</button>
+      <div id="context-content"></div>
+    </aside>
+
+    <footer class="composer" aria-label="Ritu command composer">
+      <div id="voice-wave" class="voice-wave" aria-hidden="true"></div>
+      <button id="screen-read-button" class="icon-button screen-read-button" data-action="read-screen" aria-label="Read screen with local OCR" title="Read screen with local OCR">OCR</button>
+      <button class="icon-button" data-action="attach" aria-label="Attach file">＋</button>
+      <div class="compose-field">
+        <label class="sr-only" for="command-input">Command Ritu</label>
+        <textarea id="command-input" rows="1" placeholder="Ask Ritu, assign a mission, open a project, or request a decision..."></textarea>
+        <div class="compose-meta"><select id="project-selector" aria-label="Active project"></select><select id="model-selector" aria-label="Local AI model"><option>Detecting Ollama…</option></select><button data-action="shortcuts">⌘ Commands</button></div>
+      </div>
+      <button id="stop-button" class="icon-button hidden" data-action="stop" aria-label="Stop generation">■</button>
+      <button id="mic-button" class="mic-button" data-action="voice" aria-label="Start voice input">●</button>
+      <button class="send-button" data-action="send" aria-label="Send command">↑</button>
+    </footer>
+  </div>
+
+  <div id="modal-root"></div>
+  <input id="reference-upload" class="hidden" type="file" multiple aria-label="Upload project references">
+  <div id="toast-region" class="toast-region" aria-live="polite"></div>
+  <script src="data.js"></script>
+  <script src="app.js?v=ritu-files-4"></script>
+</body>
+</html>
