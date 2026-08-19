@@ -1,0 +1,86 @@
+Collecting rapidocr==3.8.1 (from -r P:\RituAI\Prosetta-Powerhouse\requirements-ocr.txt (line 1))
+  Downloading rapidocr-3.8.1-py3-none-any.whl.metadata (1.5 kB)
+Collecting onnxruntime (from -r P:\RituAI\Prosetta-Powerhouse\requirements-ocr.txt (line 2))
+  Downloading onnxruntime-1.28.0-cp312-cp312-win_amd64.whl.metadata (5.7 kB)
+Collecting Pillow (from -r P:\RituAI\Prosetta-Powerhouse\requirements-ocr.txt (line 3))
+  Downloading pillow-12.3.0-cp312-cp312-win_amd64.whl.metadata (9.3 kB)
+Collecting pyclipper>=1.2.0 (from rapidocr==3.8.1->-r P:\RituAI\Prosetta-Powerhouse\requirements-ocr.txt (line 1))
+  Downloading pyclipper-1.4.0-cp312-cp312-win_amd64.whl.metadata (8.8 kB)
+Collecting opencv_python>=4.5.1.48 (from rapidocr==3.8.1->-r P:\RituAI\Prosetta-Powerhouse\requirements-ocr.txt (line 1))
+  Downloading opencv_python-5.0.0.93-cp37-abi3-win_amd64.whl.metadata (20 kB)
+Collecting numpy<3.0.0,>=1.19.5 (from rapidocr==3.8.1->-r P:\RituAI\Prosetta-Powerhouse\requirements-ocr.txt (line 1))
+  Downloading numpy-2.5.1-cp312-cp312-win_amd64.whl.metadata (6.6 kB)
+Collecting six>=1.15.0 (from rapidocr==3.8.1->-r P:\RituAI\Prosetta-Powerhouse\requirements-ocr.txt (line 1))
+  Using cached six-1.17.0-py2.py3-none-any.whl.metadata (1.7 kB)
+Collecting Shapely!=2.0.4,>=1.7.1 (from rapidocr==3.8.1->-r P:\RituAI\Prosetta-Powerhouse\requirements-ocr.txt (line 1))
+  Downloading shapely-2.1.2-cp312-cp312-win_amd64.whl.metadata (7.1 kB)
+Collecting PyYAML (from rapidocr==3.8.1->-r P:\RituAI\Prosetta-Powerhouse\requirements-ocr.txt (line 1))
+  Downloading pyyaml-6.0.3-cp312-cp312-win_amd64.whl.metadata (2.4 kB)
+Collecting tqdm (from rapidocr==3.8.1->-r P:\RituAI\Prosetta-Powerhouse\requirements-ocr.txt (line 1))
+  Downloading tqdm-4.69.1-py3-none-any.whl.metadata (57 kB)
+Collecting omegaconf (from rapidocr==3.8.1->-r P:\RituAI\Prosetta-Powerhouse\requirements-ocr.txt (line 1))
+  Downloading omegaconf-2.3.1-py3-none-any.whl.metadata (4.5 kB)
+Collecting requests (from rapidocr==3.8.1->-r P:\RituAI\Prosetta-Powerhouse\requirements-ocr.txt (line 1))
+  Using cached requests-2.34.2-py3-none-any.whl.metadata (4.8 kB)
+Collecting colorlog (from rapidocr==3.8.1->-r P:\RituAI\Prosetta-Powerhouse\requirements-ocr.txt (line 1))
+  Downloading colorlog-6.12.0-py3-none-any.whl.metadata (11 kB)
+Collecting flatbuffers (from onnxruntime->-r P:\RituAI\Prosetta-Powerhouse\requirements-ocr.txt (line 2))
+  Using cached flatbuffers-25.12.19-py2.py3-none-any.whl.metadata (1.0 kB)
+Collecting packaging (from onnxruntime->-r P:\RituAI\Prosetta-Powerhouse\requirements-ocr.txt (line 2))
+  Using cached packaging-26.2-py3-none-any.whl.metadata (3.5 kB)
+Collecting protobuf>=4.25.8 (from onnxruntime->-r P:\RituAI\Prosetta-Powerhouse\requirements-ocr.txt (line 2))
+  Downloading protobuf-7.35.1-cp310-abi3-win_amd64.whl.metadata (595 bytes)
+Collecting colorama (from colorlog->rapidocr==3.8.1->-r P:\RituAI\Prosetta-Powerhouse\requirements-ocr.txt (line 1))
+  Using cached colorama-0.4.6-py2.py3-none-any.whl.metadata (17 kB)
+Collecting antlr4-python3-runtime==4.9.* (from omegaconf->rapidocr==3.8.1->-r P:\RituAI\Prosetta-Powerhouse\requirements-ocr.txt (line 1))
+  Downloading antlr4-python3-runtime-4.9.3.tar.gz (117 kB)
+  Installing build dependencies: started
+  Installing build dependencies: finished with status 'done'
+  Getting requirements to build wheel: started
+  Getting requirements to build wheel: finished with status 'done'
+  Preparing metadata (pyproject.toml): started
+  Preparing metadata (pyproject.toml): finished with status 'done'
+Collecting charset_normalizer<4,>=2 (from requests->rapidocr==3.8.1->-r P:\RituAI\Prosetta-Powerhouse\requirements-ocr.txt (line 1))
+  Downloading charset_normalizer-3.4.9-cp312-cp312-win_amd64.whl.metadata (42 kB)
+Collecting idna<4,>=2.5 (from requests->rapidocr==3.8.1->-r P:\RituAI\Prosetta-Powerhouse\requirements-ocr.txt (line 1))
+  Using cached idna-3.18-py3-none-any.whl.metadata (6.1 kB)
+Collecting urllib3<3,>=1.26 (from requests->rapidocr==3.8.1->-r P:\RituAI\Prosetta-Powerhouse\requirements-ocr.txt (line 1))
+  Using cached urllib3-2.7.0-py3-none-any.whl.metadata (6.9 kB)
+Collecting certifi>=2023.5.7 (from requests->rapidocr==3.8.1->-r P:\RituAI\Prosetta-Powerhouse\requirements-ocr.txt (line 1))
+  Downloading certifi-2026.7.22-py3-none-any.whl.metadata (2.5 kB)
+Downloading rapidocr-3.8.1-py3-none-any.whl (15.1 MB)
+   ---------------------------------------- 15.1/15.1 MB 5.0 MB/s eta 0:00:00
+Downloading onnxruntime-1.28.0-cp312-cp312-win_amd64.whl (13.8 MB)
+   ---------------------------------------- 13.8/13.8 MB 5.2 MB/s eta 0:00:00
+Downloading pillow-12.3.0-cp312-cp312-win_amd64.whl (7.2 MB)
+   ---------------------------------------- 7.2/7.2 MB 3.9 MB/s eta 0:00:00
+Downloading numpy-2.5.1-cp312-cp312-win_amd64.whl (12.4 MB)
+   ---------------------------------------- 12.4/12.4 MB 4.9 MB/s eta 0:00:00
+Downloading opencv_python-5.0.0.93-cp37-abi3-win_amd64.whl (44.0 MB)
+   ---------------------------------------- 44.0/44.0 MB 4.5 MB/s eta 0:00:00
+Downloading protobuf-7.35.1-cp310-abi3-win_amd64.whl (439 kB)
+Downloading pyclipper-1.4.0-cp312-cp312-win_amd64.whl (104 kB)
+Downloading shapely-2.1.2-cp312-cp312-win_amd64.whl (1.7 MB)
+   ---------------------------------------- 1.7/1.7 MB 9.3 MB/s eta 0:00:00
+Using cached six-1.17.0-py2.py3-none-any.whl (11 kB)
+Downloading colorlog-6.12.0-py3-none-any.whl (12 kB)
+Using cached flatbuffers-25.12.19-py2.py3-none-any.whl (26 kB)
+Downloading omegaconf-2.3.1-py3-none-any.whl (79 kB)
+Downloading pyyaml-6.0.3-cp312-cp312-win_amd64.whl (154 kB)
+Using cached packaging-26.2-py3-none-any.whl (100 kB)
+Using cached requests-2.34.2-py3-none-any.whl (73 kB)
+Downloading tqdm-4.69.1-py3-none-any.whl (675 kB)
+   --------------------------------------- 675.5/675.5 kB 13.3 MB/s eta 0:00:00
+Downloading certifi-2026.7.22-py3-none-any.whl (136 kB)
+Downloading charset_normalizer-3.4.9-cp312-cp312-win_amd64.whl (162 kB)
+Using cached idna-3.18-py3-none-any.whl (65 kB)
+Using cached urllib3-2.7.0-py3-none-any.whl (131 kB)
+Using cached colorama-0.4.6-py2.py3-none-any.whl (25 kB)
+Building wheels for collected packages: antlr4-python3-runtime
+  Building wheel for antlr4-python3-runtime (pyproject.toml): started
+  Building wheel for antlr4-python3-runtime (pyproject.toml): finished with status 'done'
+  Created wheel for antlr4-python3-runtime: filename=antlr4_python3_runtime-4.9.3-py3-none-any.whl size=144613 sha256=5fd91f7f1c627d2d3850ceac90b31e0ed9f452835250e711a88a0f29fedf7e9f
+  Stored in directory: c:\users\prashant sharma\appdata\local\pip\cache\wheels\1f\be\48\13754633f1d08d1fbfc60d5e80ae1e5d7329500477685286cd
+Successfully built antlr4-python3-runtime
+Installing collected packages: flatbuffers, antlr4-python3-runtime, urllib3, six, PyYAML, pyclipper, protobuf, Pillow, packaging, numpy, idna, colorama, charset_normalizer, certifi, tqdm, Shapely, requests, opencv_python, onnxruntime, omegaconf, colorlog, rapidocr
+Successfully installed Pillow-12.3.0 PyYAML-6.0.3 Shapely-2.1.2 antlr4-python3-runtime-4.9.3 certifi-2026.7.22 charset_normalizer-3.4.9 colorama-0.4.6 colorlog-6.12.0 flatbuffers-25.12.19 idna-3.18 numpy-2.5.1 omegaconf-2.3.1 onnxruntime-1.28.0 opencv_python-5.0.0.93 packaging-26.2 protobuf-7.35.1 pyclipper-1.4.0 rapidocr-3.8.1 requests-2.34.2 six-1.17.0 tqdm-4.69.1 urllib3-2.7.0
